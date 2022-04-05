@@ -1,7 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import time
 
-df = pd.read_csv('data1.csv',sep = ';')
+df = pd.read_csv('.\data\data1.csv',sep = ';')
 print("#################################################################")
 print("df.head()\n",df.head())
 #print("df.info()\n",df.info())
@@ -16,6 +17,8 @@ print("#################################################################")
 print("#################################################################")
 
 for i,data in enumerate(veh_lane.unique()):
+    if i==2:
+        break
     #print(i,data)
     vehInOneLane = df[df.vehicle_lane==data]
     #print(vehInOneLane)
@@ -23,30 +26,40 @@ for i,data in enumerate(veh_lane.unique()):
     lanePosY =  vehInOneLane.vehicle_y
     maxTime = round(max(vehInOneLane.timestep_time))
     
-    for t in range(maxTime):git 
+    for t in range(maxTime):
         tmp  = vehInOneLane.vehicle_id.unique()
-        print(len(tmp))
+        print(t)
         #print(lanePosX)
         #plt.plot( lanePosX,lanePosY, '.')  # 蓝色圆点实线
-        
-        for data2  in tmp:
-            print(data2)
-            veh = vehInOneLane[vehInOneLane.vehicle_id==tmp & vehInOneLane.timestep_time == t]
-            if veh == None:
+        plt.ion()
+        plt.figure(1)
+        plt.plot( lanePosX,lanePosY, '.',color = 'black',linewidth=1,markersize=0.1,label='lane'),
+        colorList= ['red','green','blue','yellow']
+        for ii,data2  in enumerate(tmp):
+            #print(t)
+            veh = vehInOneLane[(vehInOneLane.vehicle_id == data2) & (vehInOneLane.timestep_time == float(t))] 
+            #print(veh)
+            if veh.empty:
                 continue
             
             vehX =  veh.vehicle_x
             vehY =  veh.vehicle_y
             vehVel = veh.vehicle_speed
             vehTime  = veh.timestep_time
-            plt.plot( lanePosX,lanePosY, '.')
-            plt.plot( vehX,vehY, 'o')  # 蓝色圆点实线 
-            plt.show()
+            
+            
+            plt.plot( vehX,vehY, 'o',color= colorList[ii%4],label=data2)  # 蓝色圆点实线 
+            plt.legend()
+            
+        plt.show()
+        plt.pause(0.001)
+        plt.ioff()
+        plt.clf()
         
-
-    break
+      
+        
     
-plt.show()
+    
 
 
 #plt.plot(df.vehicle_x,df.vehicle_y, '.')  # 蓝色圆点实线
