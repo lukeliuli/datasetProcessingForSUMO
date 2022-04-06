@@ -1,9 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
-
+import matplotlib
 from matplotlib.animation import FFMpegWriter
 
+matplotlib.use("Agg")
+print(FFMpegWriter.bin_path())
 
 df = pd.read_csv('.\data\data1.csv',sep = ';')
 print("#################################################################")
@@ -35,61 +37,57 @@ mulVehsOneLane = pd.merge(col,df,on=["vehicle_lane","timestep_time"])
 print("#################################################################")
 print("显示轨迹")
 print("#################################################################")
-fg1 = plt.figure()
+fg1 = plt.figure(figsize=(8,5))
 
 metadata = dict(title='france Dataset traces', artist='lukeliuli',comment='france Dataset traces')
-writer = FFMpegWriter(fps=15, metadata=metadata)
+writer = FFMpegWriter(fps=1, metadata=metadata)
+writer.setup(fg1, "franceDataset.mp4", dpi=100)
 
-with writer.saving(fg1, "franceDataset.mp4", 600):
+df = mulVehsOneLane
+for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
 
-    df = mulVehsOneLane
-    for i,data in enumerate(df.vehicle_lane.unique()):
-        if i==2:
-            break
-        vehInOneLane = df[df.vehicle_lane==data]
-        #print(vehInOneLane)
-        lanePosX =  vehInOneLane.vehicle_x
-        lanePosY =  vehInOneLane.vehicle_y
-        maxTime = round(max(vehInOneLane.timestep_time))
-        minTime = round(min(vehInOneLane.timestep_time))
-        
-        for t in range(minTime,maxTime):
-            tmp  = vehInOneLane.vehicle_id.unique()
-            print(t)
-            #print(lanePosX)
-            #plt.plot( lanePosX,lanePosY, '.')  # 蓝色圆点实线
-            #plt.ion()
-            
-            plt.plot( lanePosX,lanePosY, '.',color = 'black',linewidth=1,markersize=0.1,label='lane'),
-            colorList= ['red','green','blue','yellow']
-            title = "time:"+str(t)+";"
-            for ii,data2  in enumerate(tmp):
-                #print(t)
-                veh = vehInOneLane[(vehInOneLane.vehicle_id == data2) & (vehInOneLane.timestep_time == float(t))] 
-                #print(veh)
-                if veh.empty:
-                    continue
-                
-                vehX =  veh.vehicle_x
-                vehY =  veh.vehicle_y
-                vehVel = veh.vehicle_speed.to_numpy()
-                vehTime  = veh.timestep_time
-                
-                title = title+"\n"+data2+",Speed:"+str(vehVel)+";"
-                plt.plot( vehX,vehY, 'o',color= colorList[ii%4],label=data2)  # 蓝色圆点实线 
-                plt.legend()
-            
-            plt.title(title)    
-            #plt.show()
-            writer.grab_frame()
-            plt.pause(1)
-            #plt.ioff()
-            plt.clf()
+    vehInOneLane = df[df.vehicle_lane==curLaneID]
+    
+    maxTime = round(max(vehInOneLane.timestep_time))
+    minTime = round(min(vehInOneLane.timestep_time))
+    
+    for t in range(minTime,maxTime):#枚举每个时间
+        print("laneID:%s,time:%d" %(curLaneID ,t))
+        vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == float(t)] 
+        if vehsAtTime.empty:
+                continue
         
       
-        
+        #画车道图git
+        lanePosX =  vehInOneLane.vehicle_x
+        lanePosY =  vehInOneLane.vehicle_y
+        plt.plot( lanePosX,lanePosY, '.',color = 'black',linewidth=1,markersize=0.1,label='lane'),
+        colorList= ['red','green','blue','yellow']
+        title = "time:"+str(t)+";"
+
+    
+        for index, veh in vehsAtTime.iterrows():#每一辆车
+            #print(index,veh)
+            vehX =  veh.vehicle_x
+            vehY =  veh.vehicle_y
+            vehVel = veh.vehicle_speed
+            vehTime  = veh.timestep_time
+            vehID = veh.vehicle_id
+            
+            title = title+"\n"+vehID+",Speed:"+str(vehVel)+";"
+            plt.plot( vehX,vehY, 'o',color= colorList[index%4],label=curLaneID)  # 蓝色圆点实线 
+            
+        plt.legend()
+        plt.title(title,fontsize='xx-small')    
+        #plt.show()
+        writer.grab_frame()
+        #plt.ioff()
+        plt.cla()
     
     
+    
+
+
 
 
 #plt.plot(df.vehicle_x,df.vehicle_y, '.')  # 蓝色圆点实线
