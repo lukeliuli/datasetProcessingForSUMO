@@ -44,7 +44,7 @@ metadata = dict(title='france Dataset traces', artist='lukeliuli',comment='franc
 writer = FFMpegWriter(fps=5, metadata=metadata)
 
 
-df = mulVehsOneLane
+#df = mulVehsOneLane
 for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
 
     
