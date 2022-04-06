@@ -37,17 +37,20 @@ mulVehsOneLane = pd.merge(col,df,on=["vehicle_lane","timestep_time"])
 print("#################################################################")
 print("显示轨迹")
 print("#################################################################")
-fg1 = plt.figure(figsize=(8,5))
 
+
+fg1= plt.figure(figsize=(8,5))
 metadata = dict(title='france Dataset traces', artist='lukeliuli',comment='france Dataset traces')
 writer = FFMpegWriter(fps=1, metadata=metadata)
-writer.setup(fg1, "franceDataset.mp4", dpi=100)
+
 
 df = mulVehsOneLane
 for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
 
-    vehInOneLane = df[df.vehicle_lane==curLaneID]
     
+    writer.setup(fg1, "curLaneID-"+str(i)+".mp4", dpi=600)
+
+    vehInOneLane = df[df.vehicle_lane==curLaneID]
     maxTime = round(max(vehInOneLane.timestep_time))
     minTime = round(min(vehInOneLane.timestep_time))
     
@@ -74,15 +77,18 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
             vehTime  = veh.timestep_time
             vehID = veh.vehicle_id
             
-            title = title+"\n"+vehID+",Speed:"+str(vehVel)+";"
-            plt.plot( vehX,vehY, 'o',color= colorList[index%4],label=curLaneID)  # 蓝色圆点实线 
+            #title = title+"\n"+vehID+",Speed:"+str(vehVel)+";"
+            plt.plot( vehX,vehY, 'o',color= colorList[int(vehID[-1])%4],label=vehID)  # 蓝色圆点实线 
+            plt.annotate(str(vehVel)+","+vehID,xy=(vehX, vehY),  xytext=(-50, 10), textcoords='offset points')
             
-        plt.legend()
+        #plt.legend()
         plt.title(title,fontsize='xx-small')    
         #plt.show()
         writer.grab_frame()
         #plt.ioff()
         plt.cla()
+
+    writer.finish()
     
     
     
