@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import time
 import matplotlib
 from matplotlib.animation import FFMpegWriter
-
+import string
 matplotlib.use("Agg")
 print(FFMpegWriter.bin_path())
 
@@ -41,34 +41,30 @@ print("#################################################################")
 
 fg1= plt.figure(figsize=(8,5))
 metadata = dict(title='france Dataset traces', artist='lukeliuli',comment='france Dataset traces')
-writer = FFMpegWriter(fps=1, metadata=metadata)
+writer = FFMpegWriter(fps=5, metadata=metadata)
 
 
 df = mulVehsOneLane
 for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
 
     
-    writer.setup(fg1, "curLaneID-"+str(i)+".mp4", dpi=600)
-
+    writer.setup(fg1, str(i)+"-"+"laneID("+str(curLaneID)+").mp4", dpi=600)
     vehInOneLane = df[df.vehicle_lane==curLaneID]
-    maxTime = round(max(vehInOneLane.timestep_time))
-    minTime = round(min(vehInOneLane.timestep_time))
-    
-    for t in range(minTime,maxTime):#枚举每个时间
-        print("laneID:%s,time:%d" %(curLaneID ,t))
-        vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == float(t)] 
-        if vehsAtTime.empty:
-                continue
-        
-      
-        #画车道图git
-        lanePosX =  vehInOneLane.vehicle_x
-        lanePosY =  vehInOneLane.vehicle_y
-        plt.plot( lanePosX,lanePosY, '.',color = 'black',linewidth=1,markersize=0.1,label='lane'),
-        colorList= ['red','green','blue','yellow']
-        title = "time:"+str(t)+";"
+    vehInOneLane =vehInOneLane.sort_values(by='timestep_time',ascending=True)
+    #画车道图
+    lanePosX =  vehInOneLane.vehicle_x
+    lanePosY =  vehInOneLane.vehicle_y
 
-    
+    #提取时刻
+    timeList = vehInOneLane.timestep_time.unique()
+    for t in timeList:#枚举每个时间
+        title = "LaneID:"+str(curLaneID)+";"+"Time:"+str(t)+";"
+        print(title)
+        plt.plot( lanePosX,lanePosY, '.',color = 'black',linewidth=1,markersize=0.1,label='lane'),
+        colorList= ['r', 'g', 'b', 'y', 'c', 'm', 'k']
+        
+        vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == float(t)] 
+ 
         for index, veh in vehsAtTime.iterrows():#每一辆车
             #print(index,veh)
             vehX =  veh.vehicle_x
@@ -78,16 +74,18 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
             vehID = veh.vehicle_id
             
             #title = title+"\n"+vehID+",Speed:"+str(vehVel)+";"
-            plt.plot( vehX,vehY, 'o',color= colorList[int(vehID[-1])%4],label=vehID)  # 蓝色圆点实线 
-            plt.annotate(str(vehVel)+","+vehID,xy=(vehX, vehY),  xytext=(-50, 10), textcoords='offset points')
+     
+            randNum =sum([ord(x) for x in str(vehID)])
+            plt.plot( vehX,vehY, 'o',color= colorList[randNum%7],label=vehID)  # 蓝色圆点实线 
+            plt.annotate(str(vehVel)+","+vehID,xy=(vehX, vehY),  xytext=(-50, 10), textcoords='offset points') 
+        
             
-        #plt.legend()
+        plt.legend()
         plt.title(title,fontsize='xx-small')    
         #plt.show()
         writer.grab_frame()
         #plt.ioff()
         plt.cla()
-
     writer.finish()
     
     
