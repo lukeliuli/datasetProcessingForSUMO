@@ -1,10 +1,15 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import time
 import matplotlib
 from matplotlib.animation import FFMpegWriter
 import string
-matplotlib.use("Agg")
+
+
+###################################################################################################
+#############主程序
+#matplotlib.use("Agg")
 print(FFMpegWriter.bin_path())
 
 df = pd.read_csv('.\data\data1.csv',sep = ';')
@@ -31,7 +36,7 @@ df1=df.groupby(["vehicle_lane","timestep_time"]).size()
 col=df1[df1>1].reset_index()[["vehicle_lane","timestep_time"]]
 #print(col)
 mulVehsOneLane = pd.merge(col,df,on=["vehicle_lane","timestep_time"])
-#print(mulVehsOneLane)
+print(mulVehsOneLane)
 #input()
 
 print("#################################################################")
@@ -46,21 +51,29 @@ writer = FFMpegWriter(fps=5, metadata=metadata)
 
 #df = mulVehsOneLane
 for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
-
     
-    writer.setup(fg1, str(i)+"-"+"laneID("+str(curLaneID)+").mp4", dpi=600)
     vehInOneLane = df[df.vehicle_lane==curLaneID]
+    maxLanePos =  max(vehInOneLane.vehicle_pos)
     vehInOneLane =vehInOneLane.sort_values(by='timestep_time',ascending=True)
-    #画车道图
-    lanePosX =  vehInOneLane.vehicle_x
-    lanePosY =  vehInOneLane.vehicle_y
 
+    redFlagRecord = vehInOneLane.drop(index=vehInOneLane.index)
+
+    #画车道图
+    lanePosX =  vehInOneLane.vehicle_x.to_numpy()
+    lanePosY =  vehInOneLane.vehicle_y.to_numpy()
+    lanePosXT = lanePosX[:len(lanePosX):10]
+    lanePosYT = lanePosY[:len(lanePosY):10]
+    #plt.plot( lanePosXT,lanePosYT, '.',color = 'black',linewidth=1,markersize=0.1,label='lane')
+    
+    #writer.setup(fg1, str(i)+"-"+"laneID("+str(curLaneID)+").mp4", dpi=600)
     #提取时刻
     timeList = vehInOneLane.timestep_time.unique()
+    lowSpeedFlag = 0
     for t in timeList:#枚举每个时间
         title = "LaneID:"+str(curLaneID)+";"+"Time:"+str(t)+";"
         print(title)
-        plt.plot( lanePosX,lanePosY, '.',color = 'black',linewidth=1,markersize=0.1,label='lane'),
+        
+
         colorList= ['r', 'g', 'b', 'y', 'c', 'm', 'k']
         
         vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == float(t)] 
@@ -72,21 +85,55 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
             vehVel = veh.vehicle_speed
             vehTime  = veh.timestep_time
             vehID = veh.vehicle_id
-            
+            vehicle_pos = veh.vehicle_pos
             #title = title+"\n"+vehID+",Speed:"+str(vehVel)+";"
      
             randNum =sum([ord(x) for x in str(vehID)])
-            plt.plot( vehX,vehY, 'o',color= colorList[randNum%7],label=vehID)  # 蓝色圆点实线 
-            plt.annotate(str(vehVel)+","+vehID,xy=(vehX, vehY),  xytext=(-50, 10), textcoords='offset points') 
+            #plt.plot( vehX,vehY, 'o',color= colorList[randNum%7],label=vehID)  # 蓝色圆点实线 
+            #plt.annotate(str(vehVel)+","+str(vehicle_pos)+','+vehID, xy=(vehX,vehY),  xytext=(-50, 10), textcoords='offset points')
+            #plt.plot( lanePosXT,lanePosYT, '.',color = 'black',markersize=0.1,label='lane')
+            if vehVel <1 & (abs(vehicle_pos - maxLanePos)<1):
+                lowSpeedFlag = 1
+                #plt.annotate("redLight", xy=(vehX,vehY),  xytext=(-50, 20), textcoords='offset points')
+                #print("redLight"+vehID)
+                redFlagRecord = redFlagRecord.append(veh, ignore_index=True)
+          
+               
+
         
             
-        plt.legend()
-        plt.title(title,fontsize='xx-small')    
+        #plt.legend()
+        #plt.title(title,fontsize='xx-small')    
         #plt.show()
-        writer.grab_frame()
+        #writer.grab_frame()
         #plt.ioff()
-        plt.cla()
-    writer.finish()
+        #plt.cla()
+    
+    ######对每条道路进行分析,当有车处于红灯状态时而且车道上有多个车时，给出红灯状态持续时间
+    redVehs = redFlagRecord.vehicle_id.unique()#红灯状态的车辆ID
+    for i, id in enumerate(redVehs):
+        
+        #红灯状态的车辆ID
+        redFlagRecordTMP = redFlagRecord[redFlagRecord.vehicle_id == id]#红灯状态的车辆ID
+        timeList = redFlagRecordTMP.timestep_time  # 红灯状态持续时间
+        indexTmp = (vehInOneLane.timestep_time >= min(timeList)) & (vehInOneLane.timestep_time <= max(timeList))
+        vehsIDs = vehInOneLane[indexTmp]  # 获得红灯状态持续时间内，车道内的车辆数目
+        print(vehsIDs.vehicle_id.unique())
+        print(len(vehsIDs.vehicle_id.unique()))
+       
+        if len(vehsIDs.vehicle_id.unique())>1:
+            redLightTime = timeList
+            vehsAtRedTime =  vehsIDs
+            redTimeDataSet = redFlagRecordTMP
+            print(vehsIDs)
+            input()
+        
+
+
+
+    
+   
+    #writer.finish()
     
     
     
