@@ -10,6 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
+            "python": "D:\\Miniconda3\\envs\\pytorchYolo\\python.exe", // 指定python解释器
             "justMyCode": true
         }
     ]

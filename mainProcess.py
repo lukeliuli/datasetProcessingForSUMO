@@ -6,7 +6,8 @@ import matplotlib
 from matplotlib.animation import FFMpegWriter
 import string
 
-
+import warnings 
+warnings.filterwarnings('ignore')
 ###################################################################################################
 #############主程序
 #matplotlib.use("Agg")
@@ -117,16 +118,93 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
         redFlagRecordTMP = redFlagRecord[redFlagRecord.vehicle_id == id]#红灯状态的车辆ID
         timeList = redFlagRecordTMP.timestep_time  # 红灯状态持续时间
         indexTmp = (vehInOneLane.timestep_time >= min(timeList)) & (vehInOneLane.timestep_time <= max(timeList))
-        vehsIDs = vehInOneLane[indexTmp]  # 获得红灯状态持续时间内，车道内的车辆数目
-        print(vehsIDs.vehicle_id.unique())
-        print(len(vehsIDs.vehicle_id.unique()))
+        vehsAtRedTime = vehInOneLane[indexTmp]  # 获得红灯状态持续时间内，车道内的车辆数目
        
-        if len(vehsIDs.vehicle_id.unique())>1:
-            redLightTime = timeList
-            vehsAtRedTime =  vehsIDs
-            redTimeDataSet = redFlagRecordTMP
-            print(vehsIDs)
-            input()
+        if len(vehsAtRedTime.vehicle_id.unique()) > 1:
+            redLightTime = timeList#时间
+
+            dict = {}
+
+            for i,idTmp in enumerate(vehsAtRedTime.vehicle_id.unique()):
+                if idTmp == id:
+                    continue
+               
+                index = (vehsAtRedTime.vehicle_id == idTmp)  & (maxLanePos - vehsAtRedTime.vehicle_pos)<100 
+               
+                vehTmp =  vehsAtRedTime[index] 
+                print(idTmp,)
+                minSpeed = min(vehTmp.vehicle_speed)
+                if minSpeed >=40/3.6:
+                    speedFlag  = 4
+                if minSpeed <40/3.6 and minSpeed>30/3.6:
+                    speedFlag  = 3
+                if minSpeed <30/3.6 and minSpeed>20/3.6:
+                    speedFlag  = 2
+                if minSpeed <20/3.6 and minSpeed>10/3.6:
+                    speedFlag  = 1
+                if minSpeed <10/3.6:
+                    speedFlag  = 0
+                dict[idTmp] = speedFlag
+
+                
+           
+            print("timelist",timeList)
+            for t in timeList:#枚举每个时间
+                vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == float(t)] 
+                vehsAtTime =vehsAtTime.sort_values(by='vehicle_pos',ascending=True)
+                
+                vehsAtTime.head()
+                samples = []
+                counter = 0
+                for index, veh in vehsAtTime.iterrows():#每一辆车
+                  
+                    veh.head()
+                    vehX =  veh.vehicle_x
+                    vehY =  veh.vehicle_y
+                    vehVel = veh.vehicle_speed
+                    vehTime  = veh.timestep_time
+                    vehID = veh.vehicle_id
+                    vehicle_pos = veh.vehicle_pos
+                   
+                    samples2 = []
+                    
+                    
+                    if counter > 0:
+                        avg_speed_lane = 60/3.6
+                        max_speed_lane = 80/3.6
+                        subject = [max(timeList) - t,
+                        vehicle_pos,
+                        vehVel,
+                        vehicle_pos/(vehVel+0.01),
+                        vehicle_pos/avg_speed_lane,
+                        vehicle_pos/max_speed_lane]
+                       
+                        samplesTmp = samples.copy()
+                        samplesTmp.extend([0, 0]*(8-counter))#其他车辆的状态
+
+                        samples2 = subject.copy()
+                        samples2.extend(samplesTmp)
+                        
+                        #print("subject:",subject)
+                        #print("samples:",samples)
+                        #print("samplesTmp:",samplesTmp)
+                        #print("samples2:",samples2)
+                      
+                    
+                    samples.extend([vehicle_pos, vehVel])
+                    counter = counter+1
+                       
+
+
+             
+                  
+                
+                
+                
+                
+
+                
+            
         
 
 
