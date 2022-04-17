@@ -54,6 +54,8 @@ writer = FFMpegWriter(fps=5, metadata=metadata)
 for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
     
     vehInOneLane = df[df.vehicle_lane==curLaneID]
+    if vehInOneLane.empty == True:
+        continue
     maxLanePos =  max(vehInOneLane.vehicle_pos)
     vehInOneLane =vehInOneLane.sort_values(by='timestep_time',ascending=True)
 
@@ -112,10 +114,10 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
     
     ######对每条道路进行分析,当有车处于红灯状态时而且车道上有多个车时，给出红灯状态持续时间
     redVehs = redFlagRecord.vehicle_id.unique()#红灯状态的车辆ID
-    for i, id in enumerate(redVehs):
+    for i, redID in enumerate(redVehs):
         
         #红灯状态的车辆ID
-        redFlagRecordTMP = redFlagRecord[redFlagRecord.vehicle_id == id]#红灯状态的车辆ID
+        redFlagRecordTMP = redFlagRecord[redFlagRecord.vehicle_id == redID]#红灯状态的车辆ID
         timeList = redFlagRecordTMP.timestep_time  # 红灯状态持续时间
         indexTmp = (vehInOneLane.timestep_time >= min(timeList)) & (vehInOneLane.timestep_time <= max(timeList))
         vehsAtRedTime = vehInOneLane[indexTmp]  # 获得红灯状态持续时间内，车道内的车辆数目
@@ -124,15 +126,16 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
             redLightTime = timeList#时间
 
             dict = {}
-
+            print(vehsAtRedTime.vehicle_id.unique())
+            print("redStopVeh",redID)
             for i,idTmp in enumerate(vehsAtRedTime.vehicle_id.unique()):
-                if idTmp == id:
+                if idTmp == redID:
                     continue
                
-                index = (vehsAtRedTime.vehicle_id == idTmp)  & (maxLanePos - vehsAtRedTime.vehicle_pos)<100 
+                indexTmp = (vehsAtRedTime.vehicle_id == idTmp)  & (maxLanePos - vehsAtRedTime.vehicle_pos)<100 
                
-                vehTmp =  vehsAtRedTime[index] 
-                print(idTmp,)
+                vehTmp =  vehsAtRedTime[indexTmp] 
+                
                 minSpeed = min(vehTmp.vehicle_speed)
                 if minSpeed >=40/3.6:
                     speedFlag  = 4
@@ -148,24 +151,31 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
 
                 
            
-            print("timelist",timeList)
-            for t in timeList:#枚举每个时间
-                vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == float(t)] 
-                vehsAtTime =vehsAtTime.sort_values(by='vehicle_pos',ascending=True)
+            #print("timelist",timeList)
+            for t in timeList:#枚举红灯状态下的每个时间
+                #print("currentTime:",t)
+                vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == t] 
+                #print("vehicle_id.unique()\n", vehsAtTime.vehicle_id.unique())
+               
+                if len(vehsAtTime.vehicle_id.unique()) == 1:  # 如果当前时间车辆只有一部车，统计忽略
+                    continue
+
+
+                vehsAtTime =vehsAtTime.sort_values(by='vehicle_pos',ascending=False)
                 
-                vehsAtTime.head()
+                #print([vehsAtTime.timestep_time.to_numpy(),vehsAtTime.vehicle_id.to_numpy(),vehsAtTime.vehicle_pos.to_numpy()])
                 samples = []
                 counter = 0
                 for index, veh in vehsAtTime.iterrows():#每一辆车
                   
-                    veh.head()
+                    
                     vehX =  veh.vehicle_x
                     vehY =  veh.vehicle_y
                     vehVel = veh.vehicle_speed
                     vehTime  = veh.timestep_time
                     vehID = veh.vehicle_id
-                    vehicle_pos = veh.vehicle_pos
-                   
+                    vehicle_Red_distane = maxLanePos - veh.vehicle_pos
+                    print("vehID,vehicle_Red_distane",vehID,vehicle_Red_distane)
                     samples2 = []
                     
                     
@@ -173,11 +183,11 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
                         avg_speed_lane = 60/3.6
                         max_speed_lane = 80/3.6
                         subject = [max(timeList) - t,
-                        vehicle_pos,
+                        vehicle_Red_distane,
                         vehVel,
-                        vehicle_pos/(vehVel+0.01),
-                        vehicle_pos/avg_speed_lane,
-                        vehicle_pos/max_speed_lane]
+                        vehicle_Red_distane/(vehVel+0.01),
+                        vehicle_Red_distane/avg_speed_lane,
+                                   vehicle_Red_distane/max_speed_lane]
                        
                         samplesTmp = samples.copy()
                         samplesTmp.extend([0, 0]*(8-counter))#其他车辆的状态
@@ -185,13 +195,16 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
                         samples2 = subject.copy()
                         samples2.extend(samplesTmp)
                         
-                        #print("subject:",subject)
-                        #print("samples:",samples)
-                        #print("samplesTmp:",samplesTmp)
-                        #print("samples2:",samples2)
+                        print("subject:",subject)
+                        print("samples:",samples)
+                        print("samplesTmp:",samplesTmp)
+                        print("samples2:",samples2)
+                        
+                        print(dict)
+                        if dict[vehID]>0:
+                            input()
                       
-                    
-                    samples.extend([vehicle_pos, vehVel])
+                    samples.extend([vehicle_Red_distane, vehVel])
                     counter = counter+1
                        
 
