@@ -82,7 +82,7 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
         #3.1 枚举当前道路上红灯状态下的时间内所有车，并获得最小速度
         locTmp1 = vehInOneLane.timestep_time >= min(timeList)
         locTmp2 = vehInOneLane.timestep_time <= max(timeList)
-        #locTmp3 = abs(maxLanePos - vehInOneLane.vehicle_pos)<1500 #距离红灯100米以内
+        locTmp3 = abs(maxLanePos - vehInOneLane.vehicle_pos)<100 #距离红灯100米以内
         
         vehsAtTimeAndDist = vehInOneLane[locTmp1 & locTmp2]
         vehIDsAtTimeAndDist = vehsAtTimeAndDist.vehicle_id.unique()
@@ -100,7 +100,7 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
                 speedFlag  = 1
             if minSpeed <10/3.6:
                 speedFlag  = 0
-
+ 
             speedFlagDict[idTmp] = speedFlag
 
         #3.2 枚举当前道路上红灯状态下的每个时间的每一辆车，并生成样本
@@ -108,8 +108,11 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
             
             title = "LaneID:"+str(curLaneID)+" ; "+"Time:"+str(t)+" ; "+"redID:"+redID
             print("3.2 提取红灯时刻的车辆样本",title)
-            vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == t] 
-           
+            locTmp1 =  vehInOneLane.timestep_time == t      
+            locTmp2 = abs(maxLanePos - vehInOneLane.vehicle_pos)<100 #距离红灯100米以内
+
+            vehsAtTime = vehInOneLane[locTmp1 & locTmp2] 
+            
             if len(vehsAtTime.vehicle_id.unique()) == 1:  # 如果当前时间车辆只有一部车，统计忽略
                 print("vehsAtTime.vehicle_id.unique()) == 1")
                 continue
@@ -147,11 +150,11 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
                     vehicle_Red_distane/avg_speed_lane]
                     
                     samplesTmp = samples.copy()
-                    samplesTmp.extend([0, 0]*(12-counter))#主车前面的车（最大8车）车辆的状态
+                    samplesTmp.extend([0, 0]*(20-counter))#主车前面的车（最大20车）车辆的状态
 
                     samples2 = subject.copy()#当前样本：主车
-                    samples2.extend(samplesTmp)#当前样本：主车+主车前面的车（最大8车）
-                    samples2.extend([speedFlagDict[vehID]])#当前样本：主车+主车前面的车（最大8车）+speedFlag
+                    samples2.extend(samplesTmp)#当前样本：主车+主车前面的车（最大20车）
+                    samples2.extend([speedFlagDict[vehID]])#当前样本：主车+主车前面的车（最大20车）+speedFlag
                     samples3.append(samples2)#收集当前时间段内所有的样本
                     
                     #print("subject:",subject)
@@ -175,7 +178,9 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
             name2 = ["vehPos_1","vehSpeed_1","vehPos_2","vehSpeed_2","vehPos_3","vehSpeed_3","vehPos_4","vehSpeed_4"] 
             name3 = ["vehPos_5","vehSpeed_5","vehPos_6","vehSpeed_6","vehPos_7","vehSpeed_7","vehPos_8","vehSpeed_8"]
             name4 = ["vehPos_9","vehSpeed_9","vehPos_10","vehSpeed_10","vehPos_11","vehSpeed_11","vehPos_12","vehSpeed_12"]
-            headers = name1+name2+name3+name4+["speedFlag"]
+            name5 = ["vehPos_13","vehSpeed_13","vehPos_14","vehSpeed_14","vehPos_15","vehSpeed_15","vehPos_16","vehSpeed_16"]
+            name6 = ["vehPos_17","vehSpeed_17","vehPos_18","vehSpeed_18","vehPos_19","vehSpeed_19","vehPos_20","vehSpeed_20"]
+            headers = name1+name2+name3+name4+name5+name6+["speedFlag"]
             
             
             samplesTmp = pd.DataFrame(samples3,columns=headers)
