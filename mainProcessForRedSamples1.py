@@ -67,7 +67,7 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
     print("redVehs\n",redVehs.head())
     if redVehs.empty == True:
         print("redVehs.empty == True")
-        input()
+        #input()
         continue
     
     #3.当有车处于红灯状态时而且车道上有多个车时,对每条道路进行分析
