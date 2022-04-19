@@ -77,6 +77,12 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
         redVehFocusTmp = redVehs[redVehs.vehicle_id == redID]#红灯状态的车辆ID
         timeList = redVehFocusTmp.timestep_time  # 红灯状态持续时间
         samples3 = []#收集当前车道内所有样本
+        
+        #枚举红灯状态下的时间内所有车，并获得最小速度
+        locTmp = (vehInOneLane.timestep_time > min(timeList)) and (vehInOneLane.timestep_time < min(timeList))
+        vehsAtTime = vehInOneLane[vehInOneLane.timestep_time > min(timeList) and vehInOneLane.timestep_time < min(timeList)] 
+
+        #枚举红灯状态下的每个时间的每一辆车，并生成样本
         for t in timeList:#枚举红灯状态下的每个时间的每一辆车 
             
             title = "LaneID:"+str(curLaneID)+" ; "+"Time:"+str(t)+" ; "+"redID:"+redID
