@@ -184,10 +184,10 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
             
             
             samplesTmp = pd.DataFrame(samples3,columns=headers)
-            filename = '.\\franceRedData\\'+curLaneID+'+'+redID+'.csv'
+            filename = '.\\franceRedData\\'+str(i)+'+'+redID+'.csv'
             samplesTmp.to_csv(filename)
 
-            filename = '.\\franceRedData\\Platoon'+curLaneID+'+'+redID+'+Time@'+str(t)+'.csv'
+            filename = '.\\franceRedData\\Platoon'+str(i)+redID+'+Time@'+str(t)+'.csv'
             #print(filename)
             #print("vehsAtTime.head()\n",vehsAtTime.head())
             vehsAtTime.to_csv(filename)
