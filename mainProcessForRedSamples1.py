@@ -27,8 +27,8 @@ print("#################################################################")
 for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
 
     #提取红灯时刻的车辆样本 LaneID:239331354_0 ; Time:4224.0 ; redID:VehicleFlowSouthToWest4.17
-    if curLaneID != '239331354_0': #for debug
-       continue
+    #if curLaneID != '239331354_0': #for debug
+    #   continue
 
     #1.获得车道长度
     redVehs =  pd.DataFrame(columns=df.columns)
