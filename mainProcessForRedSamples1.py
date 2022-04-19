@@ -24,7 +24,7 @@ print("#################################################################")
 
 ########################################################################################
 #######枚举每一个车道,获得红灯附近的车，以及车道的长度
-for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
+for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
 
     #提取红灯时刻的车辆样本 LaneID:239331354_0 ; Time:4224.0 ; redID:VehicleFlowSouthToWest4.17
     #if curLaneID != '239331354_0': #for debug
@@ -72,12 +72,12 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
     
     #3.当有车处于红灯状态时而且车道上有多个车时,对每条道路进行分析
     speedFlagDict = {}
-    for i, redID in enumerate(redVehs.vehicle_id.unique()):
+    for ii, redID in enumerate(redVehs.vehicle_id.unique()):
         
        
         redVehFocusTmp = redVehs[redVehs.vehicle_id == redID]#红灯状态的车辆ID
         timeList = redVehFocusTmp.timestep_time.values  # 红灯状态持续时间
-        samples3 = []#收集当前车道内所有样本
+        
         
         #3.1 枚举当前道路上红灯状态下的时间内所有车，并获得最小速度
         locTmp1 = vehInOneLane.timestep_time >= min(timeList)
@@ -103,7 +103,8 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
  
             speedFlagDict[idTmp] = speedFlag
 
-        #3.2 枚举当前道路上红灯状态下的每个时间的每一辆车，并生成样本
+        #3.2 枚举当前道路上红灯状态下的每个时间的每一辆车，并生成样
+        samples3 = []#收集当前车道内对应红车有样本
         for t in timeList:#枚举红灯状态下的每个时间的每一辆车 
             
             title = "LaneID:"+str(curLaneID)+" ; "+"Time:"+str(t)+" ; "+"redID:"+redID
@@ -169,28 +170,32 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
                
             
 
-        
                
        
 
 
-            name1 = ["vehID","redLightTime","distToRedLight","speed","laneAvgSpeed","arriveTime1","arriveTime2"]   
-            name2 = ["vehPos_1","vehSpeed_1","vehPos_2","vehSpeed_2","vehPos_3","vehSpeed_3","vehPos_4","vehSpeed_4"] 
-            name3 = ["vehPos_5","vehSpeed_5","vehPos_6","vehSpeed_6","vehPos_7","vehSpeed_7","vehPos_8","vehSpeed_8"]
-            name4 = ["vehPos_9","vehSpeed_9","vehPos_10","vehSpeed_10","vehPos_11","vehSpeed_11","vehPos_12","vehSpeed_12"]
-            name5 = ["vehPos_13","vehSpeed_13","vehPos_14","vehSpeed_14","vehPos_15","vehSpeed_15","vehPos_16","vehSpeed_16"]
-            name6 = ["vehPos_17","vehSpeed_17","vehPos_18","vehSpeed_18","vehPos_19","vehSpeed_19","vehPos_20","vehSpeed_20"]
-            headers = name1+name2+name3+name4+name5+name6+["speedFlag"]
-            
-            
-            samplesTmp = pd.DataFrame(samples3,columns=headers)
-            filename = '.\\franceRedData\\'+str(i)+'+'+redID+'.csv'
-            samplesTmp.to_csv(filename)
 
-            filename = '.\\franceRedData\\Platoon'+str(i)+redID+'+Time@'+str(t)+'.csv'
+
+            filename = '.\\franceRedData\\Platoon'+str(ilane)+redID+'+Time@'+str(t)+'.csv'
             #print(filename)
             #print("vehsAtTime.head()\n",vehsAtTime.head())
             vehsAtTime.to_csv(filename)
+        
+        
+        
+        name1 = ["vehID","redLightTime","distToRedLight","speed","laneAvgSpeed","arriveTime1","arriveTime2"]   
+        name2 = ["vehPos_1","vehSpeed_1","vehPos_2","vehSpeed_2","vehPos_3","vehSpeed_3","vehPos_4","vehSpeed_4"] 
+        name3 = ["vehPos_5","vehSpeed_5","vehPos_6","vehSpeed_6","vehPos_7","vehSpeed_7","vehPos_8","vehSpeed_8"]
+        name4 = ["vehPos_9","vehSpeed_9","vehPos_10","vehSpeed_10","vehPos_11","vehSpeed_11","vehPos_12","vehSpeed_12"]
+        name5 = ["vehPos_13","vehSpeed_13","vehPos_14","vehSpeed_14","vehPos_15","vehSpeed_15","vehPos_16","vehSpeed_16"]
+        name6 = ["vehPos_17","vehSpeed_17","vehPos_18","vehSpeed_18","vehPos_19","vehSpeed_19","vehPos_20","vehSpeed_20"]
+        headers = name1+name2+name3+name4+name5+name6+["speedFlag"]
+
+
+        samplesTmp = pd.DataFrame(samples3,columns=headers)
+        filename = '.\\franceRedData\\'+str(ilane)+'+'+redID+'.csv'
+        samplesTmp.to_csv(filename) 
+
            
 
             
