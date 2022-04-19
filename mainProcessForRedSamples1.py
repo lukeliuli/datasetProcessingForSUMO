@@ -137,31 +137,9 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
                
             
 
-            ##持续时间内的速度标志
-            #提取红灯时刻的车辆样本 LaneID:239331354_0 ; Time:4223.0 ; redID:VehicleFlowSouthToWest4.17
-            if t == 4224 and redID == 'VehicleFlowSouthToWest4.17': #for debug
+        
                
-               tmpArray = np.array(samples3)
-               print(tmpArray.shape)
-               print(tmpArray)
-               
-
-
-            tmpArray = np.array(samples3)
-            minSpeed = min(tmpArray[:,3].astype(np.float))
-            #print(tmpArray[:,3])
-            #print(minSpeed,type(minSpeed))
-
-            if minSpeed >= 40/3.6:
-                speedFlag  = 4
-            if minSpeed <40/3.6 and minSpeed> 30/3.6:
-                speedFlag  = 3
-            if minSpeed <30/3.6 and minSpeed> 20/3.6:
-                speedFlag  = 2
-            if minSpeed <20/3.6 and minSpeed> 10/3.6:
-                speedFlag  = 1
-            if minSpeed <10/3.6:
-                speedFlag  = 0
+       
 
 
             name1 = ["vehID","redLightTime","distToRedLight","speed","laneAvgSpeed","arriveTime1","arriveTime2"]   
