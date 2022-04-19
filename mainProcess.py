@@ -18,13 +18,13 @@ print("#################################################################")
 print("df.head()\n",df.head())
 #print("df.info()\n",df.info())
 #print(df.describe())
-veh_lane1 = df[df.vehicle_lane=='-1356_0']
+#veh_lane1 = df[df.vehicle_lane=='-1356_0']
 print("#################################################################")
 print("veh_lane1\n",veh_lane1)
 
 veh_lane = df.vehicle_lane
 print("#################################################################")
-#print("veh_lane.unique()\n",veh_lane.unique())
+print("veh_lane.unique()\n",veh_lane.unique())
 print("#################################################################")
 
 print("#################################################################")
@@ -123,35 +123,8 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
         vehsAtRedTime = vehInOneLane[indexTmp]  # 获得红灯状态持续时间内，车道内的车辆数目
        
         if len(vehsAtRedTime.vehicle_id.unique()) > 1:
-            redLightTime = timeList#时间
 
-            dict = {}
-            print(vehsAtRedTime.vehicle_id.unique())
-            print("redStopVeh",redID)
-            for i,idTmp in enumerate(vehsAtRedTime.vehicle_id.unique()):
-                if idTmp == redID:
-                    continue
-               
-                indexTmp = (vehsAtRedTime.vehicle_id == idTmp)  & (maxLanePos - vehsAtRedTime.vehicle_pos)<100 
-               
-                vehTmp =  vehsAtRedTime[indexTmp] 
-                
-                minSpeed = min(vehTmp.vehicle_speed)
-                if minSpeed >=40/3.6:
-                    speedFlag  = 4
-                if minSpeed <40/3.6 and minSpeed>30/3.6:
-                    speedFlag  = 3
-                if minSpeed <30/3.6 and minSpeed>20/3.6:
-                    speedFlag  = 2
-                if minSpeed <20/3.6 and minSpeed>10/3.6:
-                    speedFlag  = 1
-                if minSpeed <10/3.6:
-                    speedFlag  = 0
-                dict[idTmp] = speedFlag
-
-                
-           
-            #print("timelist",timeList)
+            samples3 = []
             for t in timeList:#枚举红灯状态下的每个时间
                 #print("currentTime:",t)
                 vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == t] 
@@ -182,48 +155,63 @@ for i,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
                     if counter > 0:
                         avg_speed_lane = 60/3.6
                         max_speed_lane = 80/3.6
-                        subject = [max(timeList) - t,
+                        subject = [vehID,max(timeList) - t,#主车状态
                         vehicle_Red_distane,
                         vehVel,
+                        avg_speed_lane,
                         vehicle_Red_distane/(vehVel+0.01),
-                        vehicle_Red_distane/avg_speed_lane,
-                                   vehicle_Red_distane/max_speed_lane]
+                        vehicle_Red_distane/avg_speed_lane]
                        
                         samplesTmp = samples.copy()
-                        samplesTmp.extend([0, 0]*(8-counter))#其他车辆的状态
+                        samplesTmp.extend([0, 0]*(8-counter))#主车前面的车（最大8车）车辆的状态
 
-                        samples2 = subject.copy()
-                        samples2.extend(samplesTmp)
+                        samples2 = subject.copy()#主车
+                        samples2.extend(samplesTmp)#主车前面的车（最大8车）
+                        samples3.append(samples2)#收集当前时间段内所有的样本
                         
-                        print("subject:",subject)
-                        print("samples:",samples)
-                        print("samplesTmp:",samplesTmp)
+                        #print("subject:",subject)
+                        #print("samples:",samples)
+                        #print("samplesTmp:",samplesTmp)
                         print("samples2:",samples2)
                         
-                        print(dict)
-                        if dict[vehID]>0:
-                            input()
+                        
                       
                     samples.extend([vehicle_Red_distane, vehVel])
                     counter = counter+1
-                       
-
-
-             
-                  
-                
-                
-                
-                
-
-                
             
-        
+
+            ##持续时间内的速度标志
+            tmpArray = np.array(samples3)
+            minSpeed = min(tmpArray[:,3].astype(np.float))
+            #print(tmpArray[:,3])
+            #print(minSpeed,type(minSpeed))
+            if minSpeed >= 40/3.6:
+                speedFlag  = 4
+            if minSpeed <40/3.6 and minSpeed> 30/3.6:
+                speedFlag  = 3
+            if minSpeed <30/3.6 and minSpeed> 20/3.6:
+                speedFlag  = 2
+            if minSpeed <20/3.6 and minSpeed> 10/3.6:
+                speedFlag  = 1
+            if minSpeed <10/3.6:
+                speedFlag  = 0
 
 
-
-    
+            name1 = ["vehID","redLightTime","distToRedLight","speed","laneAvgSpeed","arriveTime1","arriveTime2"]   
+            name2 = ["vehPos_1","vehSpeed_1","vehPos_2","vehSpeed_2","vehPos_3","vehSpeed_3","vehPos_4","vehSpeed_4"] 
+            name3 = ["vehPos_5","vehSpeed_5","vehPos_6","vehSpeed_6","vehPos_7","vehSpeed_7","vehPos_8","vehSpeed_8"]
+            headers = name1+name2+name3
+            
+            
+            samplesTmp = pd.DataFrame(samples3,columns=headers)
+            samplesTmp["speedFlag"]  = speedFlag #加一列，speedFlag
+            filename = '.\\franceRedData\\'+curLaneID+'+'+redID+'.csv'
+            samplesTmp.to_csv(filename)
+            
+            
+          
    
+
     #writer.finish()
     
     
