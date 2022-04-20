@@ -7,7 +7,7 @@ from matplotlib.animation import FFMpegWriter
 import string
 
 import warnings 
-import tqdm
+from tqdm import tqdm
 warnings.filterwarnings('ignore')
 ###################################################################################################
 #############主程序
@@ -21,6 +21,7 @@ print("df.head()\n",df.head())
 
 print("#################################################################")
 print("veh_lane.unique()\n",df.vehicle_lane.unique())
+laneList = df.vehicle_lane.unique()
 numLanes = len(df.vehicle_lane.unique())
 print("numLanes \n",numLanes)
 print("#################################################################")
@@ -28,10 +29,10 @@ print("#################################################################")
 
 ########################################################################################
 #######枚举每一个车道,获得红灯附近的车，以及车道的长度
-for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
-    
+#for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
+for ilane in tqdm(range(numLanes)):#枚举每一个车道
+    curLaneID= laneList[ilane]
     print(ilane,numLanes,curLaneID)
-    
     #提取红灯时刻的车辆样本 LaneID:239331354_0 ; Time:4224.0 ; redID:VehicleFlowSouthToWest4.17
     #if curLaneID != '239331354_0': #for debug
     #   continue
@@ -53,7 +54,7 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
     lowSpeedFlag = 0
     for t in timeList:#枚举每个时间
         title = "2.提取红灯车辆以及时刻,LaneID:"+str(curLaneID)+";"+"Time:"+str(t)+";"
-        print(title)
+        #print(title)
         vehsAtTime = vehInOneLane[vehInOneLane.timestep_time == float(t)] 
 
         for index, veh in vehsAtTime.iterrows():#每一辆车
@@ -70,7 +71,7 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
                
           
    
-    print("redVehs\n",redVehs.head())
+    #print("redVehs\n",redVehs.head())
     if redVehs.empty == True:
         print("redVehs.empty == True")
         #input()
@@ -92,7 +93,7 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
         
         vehsAtTimeAndDist = vehInOneLane[locTmp1 & locTmp2]
         vehIDsAtTimeAndDist = vehsAtTimeAndDist.vehicle_id.unique()
-        print("3.1 枚举当前道路上红灯状态下的时间内所有车，并获得最小速度",vehIDsAtTimeAndDist)
+        #print("3.1 枚举当前道路上红灯状态下的时间内所有车，并获得最小速度",vehIDsAtTimeAndDist)
         for ii,idTmp  in enumerate(vehIDsAtTimeAndDist):
             vehTmp = vehsAtTimeAndDist[vehsAtTimeAndDist.vehicle_id==  idTmp]
             minSpeed = min(vehTmp.vehicle_speed.values)
@@ -114,7 +115,7 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
         for t in timeList:#枚举红灯状态下的每个时间的每一辆车 
             
             title = "LaneID:"+str(curLaneID)+" ; "+"Time:"+str(t)+" ; "+"redID:"+redID
-            print("3.2 提取红灯时刻的车辆样本",title)
+            #print("3.2 提取红灯时刻的车辆样本",title)
             locTmp1 =  vehInOneLane.timestep_time == t      
             locTmp2 = abs(maxLanePos - vehInOneLane.vehicle_pos)<100 #距离红灯100米以内
 
