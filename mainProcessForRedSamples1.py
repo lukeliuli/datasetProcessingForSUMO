@@ -7,6 +7,7 @@ from matplotlib.animation import FFMpegWriter
 import string
 
 import warnings 
+import tqdm
 warnings.filterwarnings('ignore')
 ###################################################################################################
 #############主程序
@@ -20,12 +21,17 @@ print("df.head()\n",df.head())
 
 print("#################################################################")
 print("veh_lane.unique()\n",df.vehicle_lane.unique())
+numLanes = len(df.vehicle_lane.unique())
+print("numLanes \n",numLanes)
 print("#################################################################")
+
 
 ########################################################################################
 #######枚举每一个车道,获得红灯附近的车，以及车道的长度
 for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车道
-
+    
+    print(ilane,numLanes,curLaneID)
+    
     #提取红灯时刻的车辆样本 LaneID:239331354_0 ; Time:4224.0 ; redID:VehicleFlowSouthToWest4.17
     #if curLaneID != '239331354_0': #for debug
     #   continue
@@ -72,7 +78,7 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
     
     #3.当有车处于红灯状态时而且车道上有多个车时,对每条道路进行分析
     speedFlagDict = {}
-    for ii, redID in enumerate(redVehs.vehicle_id.unique()):
+    for ired, redID in enumerate(redVehs.vehicle_id.unique()):
         
        
         redVehFocusTmp = redVehs[redVehs.vehicle_id == redID]#红灯状态的车辆ID
@@ -87,7 +93,7 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
         vehsAtTimeAndDist = vehInOneLane[locTmp1 & locTmp2]
         vehIDsAtTimeAndDist = vehsAtTimeAndDist.vehicle_id.unique()
         print("3.1 枚举当前道路上红灯状态下的时间内所有车，并获得最小速度",vehIDsAtTimeAndDist)
-        for tmpii,idTmp  in enumerate(vehIDsAtTimeAndDist):
+        for ii,idTmp  in enumerate(vehIDsAtTimeAndDist):
             vehTmp = vehsAtTimeAndDist[vehsAtTimeAndDist.vehicle_id==  idTmp]
             minSpeed = min(vehTmp.vehicle_speed.values)
             if minSpeed >= 40/3.6:
@@ -115,7 +121,7 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
             vehsAtTime = vehInOneLane[locTmp1 & locTmp2] 
             
             if len(vehsAtTime.vehicle_id.unique()) == 1:  # 如果当前时间车辆只有一部车，统计忽略
-                print("vehsAtTime.vehicle_id.unique()) == 1")
+                #print("vehsAtTime.vehicle_id.unique()) == 1")
                 continue
 
 
@@ -124,14 +130,14 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
             counter = 0
             
             #3.2.1 枚举当前道路上红灯状态下的每个时间的每一辆车，并生成每个时刻样本
-            for index, veh in vehsAtTime.iterrows():#每一辆车                  
+            for rowindex, veh in vehsAtTime.iterrows():#每一辆车                  
                 vehX =  veh.vehicle_x
                 vehY =  veh.vehicle_y
                 vehVel = veh.vehicle_speed
                 vehTime  = veh.timestep_time
                 vehID = veh.vehicle_id
                 vehicle_Red_distane = maxLanePos - veh.vehicle_pos
-                print("vehID:",vehID," vehicle_Red_distane:",vehicle_Red_distane)
+                #print("vehID:",vehID," vehicle_Red_distane:",vehicle_Red_distane)
                 samples2 = []
                 if counter == 0 and vehID != redID:
                     print("counter == 0,redID:",redID,"vehID",vehID)
@@ -175,14 +181,14 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
 
 
 
-
-            filename = '.\\franceRedData\\Platoon'+str(ilane)+redID+'+Time@'+str(t)+'.csv'
+            #记录当前时刻排队情况
+            #filename = '.\\franceRedData\\Platoon'+str(ilane)+redID+'+Time@'+str(t)+'.csv'
             #print(filename)
             #print("vehsAtTime.head()\n",vehsAtTime.head())
-            vehsAtTime.to_csv(filename)
+            #vehsAtTime.to_csv(filename)
         
         
-        
+        #当前车道，每个红灯车的所有时刻的样本
         name1 = ["vehID","redLightTime","distToRedLight","speed","laneAvgSpeed","arriveTime1","arriveTime2"]   
         name2 = ["vehPos_1","vehSpeed_1","vehPos_2","vehSpeed_2","vehPos_3","vehSpeed_3","vehPos_4","vehSpeed_4"] 
         name3 = ["vehPos_5","vehSpeed_5","vehPos_6","vehSpeed_6","vehPos_7","vehSpeed_7","vehPos_8","vehSpeed_8"]
@@ -191,27 +197,29 @@ for ilane,curLaneID in enumerate(df.vehicle_lane.unique()):#枚举每一个车�
         name6 = ["vehPos_17","vehSpeed_17","vehPos_18","vehSpeed_18","vehPos_19","vehSpeed_19","vehPos_20","vehSpeed_20"]
         headers = name1+name2+name3+name4+name5+name6+["speedFlag"]
 
-
-        samplesTmp = pd.DataFrame(samples3,columns=headers)
-        filename = '.\\franceRedData\\'+str(ilane)+'+'+redID+'.csv'
-        samplesTmp.to_csv(filename) 
-
-           
-
-            
-            
-            
-          
-   
-
-    #writer.finish()
-    
-    
-    
+        if samples3 != []:
+            samplesTmp = pd.DataFrame(samples3,columns=headers)
+            filename = '.\\franceRedData\\'+str(ilane)+'+'+redID+'.csv'
+            samplesTmp.to_csv(filename,float_format='%.3f',index=0) 
 
 
+###################################################################################
+#将所有样本集合成一个CSV文件
+import os
+import pandas as pd
+path = ".\\franceRedData\\"
 
+filelist = [path + i for i in os.listdir(path)]
+dataset = pd.read_csv(filelist[0])
 
-#plt.plot(df.vehicle_x,df.vehicle_y, '.')  # 蓝色圆点实线
-#plt.show()
+for tmpFile in filelist:
+    if tmpFile.endswith(".csv"):
+        #print(tmpFile)
+        tmpDF = pd.read_csv(tmpFile)
+        dataset = pd.concat([dataset,tmpDF],ignore_index=True,axis=0)
+        
+
+filename= path+"0_allSamples.csv" 
+dataset.to_csv(filename,float_format='%.3f',index=0) 
+        
 
